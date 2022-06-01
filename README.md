@@ -16,33 +16,11 @@ It was presented in the WCCI 2018, in particular in the IEEE Congress on
 Evolutionary Computation. The
 [slides are available](https://speakerdeck.com/dmolina/shade-with-iterative-local-search-for-large-scale-global-optimization).
 
-## Install ##
+---
+This fork fixes a few upstream bugs during installation and update all required dependecies to newer versions.
 
-It is recommended to use
+## Changelog
 
-```shell
-source install.sh
-```
-
-That command will create a virtual environment (virtualenv) in the directory 
-venv with all required dependencies. 
-
-## Run ##
-
-The source code is prepared for doing the experiments using the Large-Scale
-Global Optimization CEC'2013 benchmark.
-
-Parameters:
-
-python shadeils -f <function> -s <seed> [-r <run>] ...
-
-- **function** is the number of function (between 1-15).
-- **run** is the number of run for evaluations. 
-- **seed** is a seed value (integer value between 1 and 5).
-
-There are other optional parameters, you can run
-
-```shell
-python shadeils.py -h```
-
-to get the descriptions of the different optional parameters.
+- (01/06/2022) Remove unused scripts for installation;
+- (01/06/2022) Update `requirements.txt` to use newer versions;
+- (01/06/2022) Refactor `ea` directory;
