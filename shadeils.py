@@ -1,5 +1,3 @@
-## !/usr/bin/python
-# pylint: disable=E1101
 import argparse
 import sys
 

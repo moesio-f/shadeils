@@ -25,5 +25,3 @@ if [ ! -d $DIR ]; then
 else
 	source $DIR/bin/activate
 fi
-
-sed -i -E "s?/home/dmolina/shadeils/shadeils-env?${PWD}/${DIR}?" shadeils.py
