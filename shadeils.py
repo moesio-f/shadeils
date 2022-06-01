@@ -1,6 +1,5 @@
-#!/mnt/home/daniel/working/shadeils/venv/bin/python
 ## !/usr/bin/python
-#     pylint: disable=E1101
+# pylint: disable=E1101
 import argparse
 import sys
 
