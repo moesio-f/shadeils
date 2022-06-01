@@ -1,7 +1,8 @@
-cec2013lsgo==2.1
-numpy==1.15.0rc2
-pandas==0.23.3
-python-dateutil==2.7.3
-pytz==2018.5
-scipy==1.1.0
+cec2013lsgo==2.2
+Cython==0.29.30
+numpy==1.22.4
+pandas==1.4.2
+python-dateutil==2.8.2
+pytz==2022.1
+scipy==1.8.1
 six==1.11.0
