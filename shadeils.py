@@ -436,43 +436,52 @@ def main(args, fitness: generic_fns.FitnessFunction = None):
                         dest="dir_output", help='directory output')
 
     args = parser.parse_args(args)
-    fun = args.function if not fitness else fitness
-    dim = 1000 if not fitness else fitness.info['dimension']
+    fun = args.function
+    dim = 1000
     seed = args.seed
+    evals = list(map(int, [1.2e5, 6e5, 3e6])) # milestones, last is the maximum of evaluations
 
     if seed < 0:
         np.random.seed(None)
         seed = np.random.randint(0, 999999999)
 
+    if args.shade_h is None:
+        args.shade_h = min(args.popsize, 100)
+
+    if (args.maxevals):
+        evals = list(range(args.maxevals+1))
+
+    if not fitness:
+      # If fitness is not set, should use benchmark
+      bench = Benchmark()
+      maxfuns = bench.get_num_functions()
+      funinfo = bench.get_info(fun)
+
+      if not (1 <= fun <= maxfuns):
+          parser.print_help()
+          sys.exit(1)
+
+      # Parameter commons
+      bench.set_algname("shadeils_restart0.1_pos")
+      fitness_fun = bench.get_function(fun)
+    else:
+      funinfo = fitness.info
+      fitness_fun = fitness.fn
+      dim = funinfo['dimension']
+
+    # Set seed
+    np.random.seed(seed)
+    
     print("Function: {0}".format(fun))
     print("Seed: {0}".format(seed))
     print("Treshold: {0}".format(args.threshold))
     print("Popsize: {0}".format(args.popsize))
-
-    if args.shade_h is None:
-        args.shade_h = min(args.popsize, 100)
-
     print("SHADE_H: {0}".format(args.shade_h))
 
-    evals = list(map(int, [1.2e5, 6e5, 3e6]))
-
-    if (args.maxevals):
-        evals = list(range(args.maxevals))
-
-    bench = Benchmark()
-    maxfuns = bench.get_num_functions()
-    funinfo = bench.get_info(fun) if not fitness else fun.info
-
-    if not fitness and not (1 <= fun <= maxfuns):
-        parser.print_help()
-        sys.exit(1)
-
     name = "SHADEILS"
-
     fname = name + \
         "_pop{args.popsize}_H{args.shade_h}_t{args.threshold:.2f}_F{function}_{seed}r{args.run}.txt".format(
-            args=args, seed=seed, function=fun if not fitness else fun.name)
-
+            args=args, seed=seed, function=fun if not fitness else fitness.name)
     output = path.join(args.dir_output, fname)
 
     if not args.verbose and isfile(output):
@@ -488,17 +497,13 @@ def main(args, fitness: generic_fns.FitnessFunction = None):
     else:
         fid = sys.stdout
 
-    # Parameter commons
-    bench.set_algname("shadeils_restart0.1_pos")
-    fitness_fun = bench.get_function(fun) if not fitness else fun.fn
-
-    np.random.seed(seed)
-
     for _ in range(args.run):
         SR_MTS = []
         SR_global_MTS = []
         ihshadels(fitness_fun, funinfo, dim, evals, fid,
-                  threshold=args.threshold, popsize=args.popsize, info_de=args.shade_h)
+                  threshold=args.threshold, 
+                  popsize=args.popsize, 
+                  info_de=args.shade_h)
         if not fitness:
             bench.next_run()
 
