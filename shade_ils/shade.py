@@ -11,7 +11,7 @@ doi:10.1109/CEC.2013.655755510.1109/CEC.2013.6557555
 """
 import numpy as np
 
-from DE import EAresult, random_population, get_experiments_file, random_indexes
+from shade_ils.de import EAResult, random_population, get_experiments_file, random_indexes
 import math
 
 def improve(fun, run_info, dimension, check_evals, name_output=None, replace=True, popsize=100, H=100, population=None, population_fitness=None, initial_solution=None, MemF=None, MemCR=None):
@@ -179,7 +179,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
     bestIndex = np.argmin(population_fitness)
     print("SHADE Mean[F,CR]: ({0:.2f}, {1:.2f})".format(MemF.mean(), MemCR.mean()))
           
-    return EAresult(fitness=population_fitness[bestIndex], solution=population[bestIndex], evaluations=numEvalFound), bestIndex
+    return EAResult(fitness=population_fitness[bestIndex], solution=population[bestIndex], evaluations=numEvalFound), bestIndex
 
 def limit_memory(memory, memorySize):
     """

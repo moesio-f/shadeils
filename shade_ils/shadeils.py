@@ -1,28 +1,26 @@
 import argparse
 import sys
-from os import path
-from os.path import isfile
+import os
+import typing
 
 import numpy as np
-from cec2013lsgo.cec2013 import Benchmark
-from scipy.optimize import fmin_l_bfgs_b
+import scipy.optimize as scipy_optimize
 
-from DE import EAresult
-from ea import DEcrossover
-import fitness_function as generic_fns
-import SHADE
-from mts import mtsls
-
-
-"""
-This class allow us to have a pool of operation. When we ask the Pool one of
-them, the selected operator is decided following the last element whose improvement
-ratio was better. The idea is to apply more times the operator with a better
-improvement.
-"""
+import shade_ils.de as de
+import ea
+import shade_ils.fitness_function as fns
+import shade_ils.shade as shade
+import shade_ils.mts as mts
 
 
 class PoolLast:
+    """
+    This class allow us to have a pool of operation. When we ask the Pool one of
+    them, the selected operator is decided following the last element whose improvement
+    ratio was better. The idea is to apply more times the operator with a better
+    improvement.
+    """
+
     def __init__(self, options):
         """
         Constructor
@@ -140,7 +138,7 @@ def apply_localsearch(name, method, fitness_fun, bounds, current_best, current_b
     upper = bounds[0][1]
 
     if method == 'grad':
-        sol, fit, info = fmin_l_bfgs_b(
+        sol, fit, info = scipy_optimize.fmin_l_bfgs_b(
             fitness_fun, x0=current_best, approx_grad=1, bounds=bounds, maxfun=maxevals, disp=False)
         funcalls = info['funcalls']
     elif method == 'mts':
@@ -149,8 +147,8 @@ def apply_localsearch(name, method, fitness_fun, bounds, current_best, current_b
         else:
             SR = SR_MTS
 
-        res, SR_MTS = mtsls(fitness_fun, current_best,
-                            current_best_fitness, lower, upper, maxevals, SR)
+        res, SR_MTS = mts.mtsls(fitness_fun, current_best,
+                                current_best_fitness, lower, upper, maxevals, SR)
         sol = res.solution
         fit = res.fitness
         funcalls = maxevals
@@ -160,9 +158,9 @@ def apply_localsearch(name, method, fitness_fun, bounds, current_best, current_b
     if fit <= current_best_fitness:
         fid.write(get_improvement("{0} {1}".format(
             method.upper(), name), current_best_fitness, fit))
-        return EAresult(solution=np.array(sol), fitness=fit, evaluations=funcalls)
+        return de.EAResult(solution=np.array(sol), fitness=fit, evaluations=funcalls)
     else:
-        return EAresult(solution=current_best, fitness=current_best_fitness, evaluations=funcalls)
+        return de.EAResult(solution=current_best, fitness=current_best_fitness, evaluations=funcalls)
 
 
 def random_population(lower, upper, dimension, size):
@@ -177,7 +175,7 @@ def applySHADE(crossover, fitness, funinfo, dimension, evals, population, popula
     if H is None:
         H = population.shape[0]
 
-    result, bestId = SHADE.improve(run_info=funinfo, replace=False, dimension=dimension, name_output=None,
+    result, bestId = shade.improve(run_info=funinfo, replace=False, dimension=dimension, name_output=None,
                                    population=population, H=H, population_fitness=populationFitness, fun=fitness, check_evals=evals, initial_solution=current_best.solution, MemF=applySHADE.MemF, MemCR=applySHADE.MemCR)
     fid.write(get_improvement("SHADE partial",
               current_best.fitness, result.fitness))
@@ -212,7 +210,7 @@ def reset_de(popsize, dimension, lower, upper, H, current_best_solution=None):
     population = random_population(lower, upper, dimension, popsize)
 
     if current_best_solution is not None:
-        posrand = randint(popsize)
+        posrand = np.random.randint(popsize)
         population[posrand] = current_best_solution
 
     applySHADE.MemF = 0.5*np.ones(H)
@@ -236,29 +234,40 @@ def get_ratio_improvement(previous_fitness, new_fitness):
     return improvement
 
 
-def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug=False, threshold=0.05):
+def ihshadels(fitness: fns.FitnessFunction,
+              milestones: typing.List[int],
+              max_evals: int,
+              fid,
+              info_de,
+              evals_gs: typing.Optional[int] = None,
+              evals_de: typing.Optional[int] = None,
+              evals_ls: typing.Optional[int] = None,
+              population_size=100,
+              debug=False,
+              threshold=0.05):
     """
     Implementation of the proposal for CEC2015
     """
-    lower = funinfo['lower']
-    upper = funinfo['upper']
-    evals = evals[:]
-
-    initial_sol = np.ones(dim)*((lower+upper)/2.0)
-    current_best_fitness = fitness_fun(initial_sol)
-
-    maxevals = evals[-1]
+    lower = fitness.info['lower']
+    upper = fitness.info['upper']
+    dims = fitness.info['dimension']
+    fitness_fun = fitness.fn
+    funinfo = fitness.info
+    evals = milestones
     totalevals = 1
 
-    bounds = list(zip(np.ones(dim)*lower, np.ones(dim)*upper))
-    bounds_partial = list(zip(np.ones(dim)*lower, np.ones(dim)*upper))
+    initial_sol = np.ones(dims)*((lower+upper)/2.0)
+    current_best_fitness = fitness_fun(initial_sol)
 
-    popsize = min(popsize, 100)
-    population = reset_de(popsize, dim, lower, upper, info_de)
+    bounds = list(zip(np.ones(dims)*lower, np.ones(dims)*upper))
+    bounds_partial = list(zip(np.ones(dims)*lower, np.ones(dims)*upper))
+
+    population_size = min(population_size, 100)
+    population = reset_de(population_size, dims, lower, upper, info_de)
     populationFitness = [fitness_fun(ind) for ind in population]
     bestId = np.argmin(populationFitness)
 
-    initial_sol = np.ones(dim)*(lower+upper)/2.0
+    initial_sol = np.ones(dims)*(lower+upper)/2.0
     initial_fitness = fitness_fun(initial_sol)
 
     if initial_fitness < populationFitness[bestId]:
@@ -266,10 +275,11 @@ def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug
         population[bestId] = initial_sol
         populationFitness[bestId] = initial_fitness
 
-    current_best = EAresult(
-        solution=population[bestId, :], fitness=populationFitness[bestId], evaluations=totalevals)
+    current_best = de.EAResult(solution=population[bestId, :],
+                               fitness=populationFitness[bestId],
+                               evaluations=totalevals)
 
-    crossover = DEcrossover.SADECrossover(2)
+    crossover = ea.DEcrossover.SADECrossover(2)
     best_global_solution = current_best.solution
     best_global_fitness = current_best.fitness
     current_best_solution = best_global_solution
@@ -277,7 +287,7 @@ def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug
     apply_de = apply_ls = True
     applyDE = applySHADE
 
-    reset_ls(dim, lower, upper)
+    reset_ls(dims, lower, upper)
     methods = ['mts', 'grad']
 
     pool_global = PoolLast(methods)
@@ -285,12 +295,12 @@ def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug
 
     num_worse = 0
 
-    evals_gs = min(50*dim, 25000)
-    evals_de = min(50*dim, 25000)
-    evals_ls = min(10*dim, 5000)
+    evals_gs = min(50*dims, 25000) if evals_gs is None else evals_gs
+    evals_de = min(50*dims, 25000) if evals_de is None else evals_de
+    evals_ls = min(10*dims, 5000) if evals_ls is None else evals_ls
     num_restarts = 0
 
-    while totalevals < maxevals:
+    while totalevals < max_evals:
         method = ""
 
         if not pool_global.is_empty():
@@ -313,14 +323,14 @@ def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug
                 best_global_fitness = fitness_fun(best_global_solution)
 
         for i in range(1):
-            current_best = EAresult(
+            current_best = de.EAResult(
                 solution=current_best_solution, fitness=current_best_fitness, evaluations=0)
             set_region_ls()
 
             method = pool.get_new()
 
             if apply_de:
-                result, bestInd = applyDE(crossover, fitness_fun, funinfo, dim, evals_de,
+                result, bestInd = applyDE(crossover, fitness_fun, funinfo, dims, evals_de,
                                           population, populationFitness, bestId, current_best, fid, info_de)
                 improvement = current_best.fitness - result.fitness
                 totalevals += result.evaluations
@@ -367,39 +377,40 @@ def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug
                 fid.write("Pools Improvements: {}".format(imp_str))
 
                 # Random the LS
-                reset_ls(dim, lower, upper, method)
+                reset_ls(dims, lower, upper, method)
 
             if num_worse >= 3:
                 num_worse = 0
                 fid.write("Restart:{0:.2e} for {1:.2f}: with {2:d} evaluations\n".format(
                     current_best.fitness, ratio_improvement, totalevals))
                 # Increase a 1% of values
-                posi = np.random.choice(popsize)
+                posi = np.random.choice(population_size)
                 new_solution = np.random.uniform(-0.01,
-                                                 0.01, dim)*(upper-lower)+population[posi]
+                                                 0.01, dims)*(upper-lower)+population[posi]
                 new_solution = np.clip(new_solution, lower, upper)
-                current_best = EAresult(
+                current_best = de.EAResult(
                     solution=new_solution, fitness=fitness_fun(new_solution), evaluations=0)
                 current_best_solution = current_best.solution
                 current_best_fitness = current_best.fitness
 
                 # Init DE
-                population = reset_de(popsize, dim, lower, upper, info_de)
+                population = reset_de(
+                    population_size, dims, lower, upper, info_de)
                 populationFitness = [fitness_fun(ind) for ind in population]
-                totalevals += popsize
+                totalevals += population_size
 
-                totalevals += popsize
+                totalevals += population_size
                 # Random the LS
                 pool_global.reset()
                 pool.reset()
-                reset_ls(dim, lower, upper)
+                reset_ls(dims, lower, upper)
                 num_restarts += 1
 
             fid.write("{0:.2e}({1:.2e}): with {2:d} evaluations\n".format(
                 current_best_fitness, best_global_fitness, totalevals))
             fid.flush()
 
-            if totalevals >= maxevals:
+            if totalevals >= max_evals:
                 break
 
     fid.write("%e,%s,%d\n" % (abs(best_global_fitness), ' '.join(
@@ -408,107 +419,59 @@ def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug
     return result
 
 
-def main(args, fitness: generic_fns.FitnessFunction = None):
+def start(fitness: fns.FitnessFunction,
+          shade_h: int = 100,
+          population: int = 100,
+          threshold: float = 1e-2,
+          max_evals: int = int(3e6),
+          evals_gs: int = None,  # Number of local search FEs
+          evals_ls: int = None,  # Number of local search FEs
+          evals_de: int = None,  # Number of differential evolution FEs
+          milestones: typing.List[int] = list(map(int, [1.2e5, 6e5, 3e6])),
+          runs: int = 1,
+          seed=None,
+          output_dir='results',
+          fname_prefix='SHADE',
+          verbose=False):
     global SR_MTS, SR_global_MTS
 
-    """
-    Main program. It uses
-    Run DE for experiments. F, CR must be float, or 'n' as a normal
-    """
-    description = __file__
-    parser = argparse.ArgumentParser(description)
-    parser.add_argument("-f", default=1, required=False, type=int,
-                        choices=range(1, 16), dest="function", help='function')
-    parser.add_argument("-v", default=False, dest="verbose",
-                        action='store_true', help='verbose mode')
-    parser.add_argument("-s", default=-1, type=int,
-                        dest="seed", help='seed (positive integer)')
-    parser.add_argument("-r", default=5, type=int, dest="run", help='runs')
-    parser.add_argument("-e", required=False, type=int,
-                        dest="maxevals", help='maxevals')
-    parser.add_argument("-t", default=0.01, type=float,
-                        dest="threshold", help='threshold')
-    parser.add_argument("-p", default=100, type=int,
-                        dest="popsize", help='population size')
-    parser.add_argument("-H", default=None, type=int,
-                        dest="shade_h", help='SHADE history size')
-    parser.add_argument("-d", default="results", type=str,
-                        dest="dir_output", help='directory output')
-
-    args = parser.parse_args(args)
-    fun = args.function
-    dim = 1000
-    seed = args.seed
-    evals = list(map(int, [1.2e5, 6e5, 3e6])) # milestones, last is the maximum of evaluations
-
-    if seed < 0:
+    if seed is None:
         np.random.seed(None)
         seed = np.random.randint(0, 999999999)
 
-    if args.shade_h is None:
-        args.shade_h = min(args.popsize, 100)
-
-    if (args.maxevals):
-        evals = list(range(args.maxevals+1))
-
-    if not fitness:
-      # If fitness is not set, should use benchmark
-      bench = Benchmark()
-      maxfuns = bench.get_num_functions()
-      funinfo = bench.get_info(fun)
-
-      if not (1 <= fun <= maxfuns):
-          parser.print_help()
-          sys.exit(1)
-
-      # Parameter commons
-      bench.set_algname("shadeils_restart0.1_pos")
-      fitness_fun = bench.get_function(fun)
-    else:
-      funinfo = fitness.info
-      fitness_fun = fitness.fn
-      dim = funinfo['dimension']
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     # Set seed
     np.random.seed(seed)
-    
-    print("Function: {0}".format(fun))
+
+    print("Function: {0}".format(fitness.name))
     print("Seed: {0}".format(seed))
-    print("Treshold: {0}".format(args.threshold))
-    print("Popsize: {0}".format(args.popsize))
-    print("SHADE_H: {0}".format(args.shade_h))
+    print("Threshold: {0}".format(threshold))
+    print("Population_size: {0}".format(population))
+    print("SHADE_H: {0}".format(shade_h))
 
-    name = "SHADEILS"
-    fname = name + \
-        "_pop{args.popsize}_H{args.shade_h}_t{args.threshold:.2f}_F{function}_{seed}r{args.run}.txt".format(
-            args=args, seed=seed, function=fun if not fitness else fitness.name)
-    output = path.join(args.dir_output, fname)
+    fname = fname_prefix + \
+        f"_pop{population}_H{shade_h}_t{threshold:.2f}_F{fitness.name}_{seed}r{runs}.txt"
+    output = os.path.join(output_dir, fname)
 
-    if not args.verbose and isfile(output):
-        fin = open(output, 'rb')
-        lines = fin.readlines()
-        fin.close()
-
-        if lines:
-            return
-
-    if not args.verbose:
-        fid = open(output, 'w')
+    if not verbose:
+        fid = open(output, 'w+')
     else:
         fid = sys.stdout
 
-    for _ in range(args.run):
+    for _ in range(runs):
         SR_MTS = []
         SR_global_MTS = []
-        ihshadels(fitness_fun, funinfo, dim, evals, fid,
-                  threshold=args.threshold, 
-                  popsize=args.popsize, 
-                  info_de=args.shade_h)
-        if not fitness:
-            bench.next_run()
+        ihshadels(fitness=fitness,
+                  milestones=milestones,
+                  max_evals=max_evals,
+                  evals_gs=evals_gs,
+                  evals_ls=evals_ls,
+                  evals_de=evals_de,
+                  fid=fid,
+                  threshold=threshold,
+                  population_size=population,
+                  info_de=shade_h)
 
     fid.close()
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:], generic_fns.ACKLEY)
