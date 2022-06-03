@@ -452,7 +452,7 @@ def start(fitness: fns.FitnessFunction,
     print("SHADE_H: {0}".format(shade_h))
 
     fname = fname_prefix + \
-        f"_pop{population}_H{shade_h}_t{threshold:.2f}_F{fitness.name}_{seed}r{runs}.txt"
+        f"_pop{population}_H{shade_h}_t{threshold:.2f}_{fitness.name}_{seed}r{runs}.txt"
     output = os.path.join(output_dir, fname)
 
     if not verbose:
