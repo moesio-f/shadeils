@@ -397,7 +397,6 @@ def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug
 
             fid.write("{0:.2e}({1:.2e}): with {2:d} evaluations\n".format(
                 current_best_fitness, best_global_fitness, totalevals))
-#            fid.write("improvement_group[{}] : {:.2e}\n".format(i, (initial_fitness - result.fitness)))
             fid.flush()
 
             if totalevals >= maxevals:
