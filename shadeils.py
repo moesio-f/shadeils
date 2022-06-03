@@ -9,8 +9,6 @@ from DE import EAresult
 
 from scipy.optimize import fmin_l_bfgs_b
 
-from numpy.random import seed, permutation, uniform, randint
-
 import numpy as np
 
 import SHADE
@@ -41,13 +39,13 @@ class PoolLast:
         self.options = np.copy(options)
         self.improvements = []
         self.count_calls = 0
-        self.first = permutation(self.options).tolist()
+        self.first = np.random.permutation(self.options).tolist()
 
         self.new = None
         self.improvements = dict(zip(options, [0] * size))
 
     def reset(self):
-        self.first = permutation(self.options).tolist()
+        self.first = np.random.permutation(self.options).tolist()
         self.new = None
         options = self.options
         size = len(options)
@@ -176,7 +174,7 @@ def apply_localsearch(name, method, fitness_fun, bounds, current_best, current_b
 
 
 def random_population(lower, upper, dimension, size):
-    return uniform(lower, upper, dimension*size).reshape((size, dimension))
+    return np.random.uniform(lower, upper, dimension*size).reshape((size, dimension))
 
 
 def applySHADE(crossover, fitness, funinfo, dimension, evals, population, populationFitness, bestId, current_best, fid, H=None):
@@ -387,7 +385,7 @@ def ihshadels(fitness_fun, funinfo, dim, evals, fid, info_de, popsize=100, debug
                     current_best.fitness, ratio_improvement, totalevals))
                 # Increase a 1% of values
                 posi = np.random.choice(popsize)
-                new_solution = np.random.uniform(-0.01,
+                new_solution = np.random.np.random.uniform(-0.01,
                                                  0.01, dim)*(upper-lower)+population[posi]
                 new_solution = np.clip(new_solution, lower, upper)
                 current_best = EAresult(
@@ -434,8 +432,7 @@ def main(args):
                         choices=range(1, 16), dest="function", help='function')
     parser.add_argument("-v", default=False, dest="verbose",
                         action='store_true', help='verbose mode')
-    parser.add_argument("-s", default=1, type=int, dest="seed",
-                        choices=range(1, 6), help='seed (1 - 5)')
+    parser.add_argument("-s", default=-1, type=int, dest="seed", help='seed (positive integer)')
     parser.add_argument("-r", default=5, type=int, dest="run", help='runs')
     parser.add_argument("-e", required=False, type=int,
                         dest="maxevals", help='maxevals')
@@ -448,14 +445,17 @@ def main(args):
     parser.add_argument("-d", default="results", type=str,
                         dest="dir_output", help='directory output')
 
-    # seeds
-    seeds = [23, 45689, 97232447, 96793335, 12345679]
     args = parser.parse_args(args)
     fun = args.function
     dim = 1000
+    seed = args.seed
+
+    if seed < 0:
+        np.random.seed(None)
+        seed = np.random.randint(0, 999999999)
 
     print("Function: {0}".format(fun))
-    print("Seed: {0}".format(args.seed))
+    print("Seed: {0}".format(seed))
     print("Treshold: {0}".format(args.threshold))
     print("Popsize: {0}".format(args.popsize))
 
@@ -473,15 +473,15 @@ def main(args):
     maxfuns = bench.get_num_functions()
     funinfo = bench.get_info(fun)
 
-    if not (1 <= fun <= maxfuns and 1 <= args.seed <= 5):
+    if not (1 <= fun <= maxfuns):
         parser.print_help()
         sys.exit(1)
 
     name = "SHADEILS"
 
     fname = name + \
-        "_pop{args.popsize}_H{args.shade_h}_t{args.threshold:.2f}_F{args.function}_{args.seed}r{args.run}.txt".format(
-            args=args)
+        "_pop{args.popsize}_H{args.shade_h}_t{args.threshold:.2f}_F{args.function}_{seed}r{args.run}.txt".format(
+            args=args, seed=seed)
 
     output = path.join(args.dir_output, fname)
 
@@ -502,7 +502,7 @@ def main(args):
     bench.set_algname("shadeils_restart0.1_pos")
     fitness_fun = bench.get_function(fun)
 
-    seed(seeds[args.seed-1])
+    np.random.seed(seed)
 
     for _ in range(args.run):
         SR_MTS = []
