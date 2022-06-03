@@ -24,8 +24,6 @@ class Sphere:
         return FitnessFunction(fn=self,
                                info={'lower': self.lower,
                                      'upper': self.upper,
-                                     'threshold': 0.0,
-                                     'best': 0.0,
                                      'dimension': self.dims},
                                name='Sphere')
 
@@ -59,7 +57,5 @@ class Ackley:
         return FitnessFunction(fn=self,
                                info={'lower': self.lower,
                                      'upper': self.upper,
-                                     'threshold': 0.0,
-                                     'best': 0.0,
                                      'dimension': self.dims},
                                name='Ackley')
