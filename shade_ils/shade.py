@@ -11,7 +11,7 @@ doi:10.1109/CEC.2013.655755510.1109/CEC.2013.6557555
 """
 import numpy as np
 
-from DE import EAresult, random_population, get_experiments_file, random_indexes
+from shade_ils.de import EAResult, random_population, get_experiments_file, random_indexes
 import math
 
 def improve(fun, run_info, dimension, check_evals, name_output=None, replace=True, popsize=100, H=100, population=None, population_fitness=None, initial_solution=None, MemF=None, MemCR=None):
@@ -25,7 +25,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
     run_info is a dictionary with the following information:
          lower: double lower bounds
          upper: double upper bounds
-         threshold: minimum optim value
+         threshold: minimum optim value (ignored)
     
     dimension of the problem.
     max_evals maximum_evaluations_numbers.
@@ -43,7 +43,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
     if final is not None:
         return final
     
-    for attr in ['lower', 'upper', 'threshold', 'best']:
+    for attr in ['lower', 'upper']:
          assert attr in run_info.keys(), "'{}' info not provided for benchmark".format(attr)
 
     # Added in a array the max evaluations
@@ -51,7 +51,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
         check_evals = [check_evals]
 
     domain = (run_info['lower'], run_info['upper'])
-    fun_best = run_info['best']
+    # fun_best = run_info['best'], for generic function it's usually unknown.
     maxEval = check_evals[-1]
     check_eval = check_evals.pop()
 
@@ -167,7 +167,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
     if fid is not None and currentEval >= check_eval:
         bestFitness = np.min(population_fitness)
         print("bestFitness: {}".format(bestFitness))
-        fid.write("[%.0e]: %e,%d\n" %(check_eval, abs(bestFitness-fun_best), numEvalFound))
+        fid.write("[%.0e]: %e,%d\n" %(check_eval, abs(bestFitness), numEvalFound))
         fid.flush()
 
         if check_evals:
@@ -179,7 +179,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
     bestIndex = np.argmin(population_fitness)
     print("SHADE Mean[F,CR]: ({0:.2f}, {1:.2f})".format(MemF.mean(), MemCR.mean()))
           
-    return EAresult(fitness=population_fitness[bestIndex], solution=population[bestIndex], evaluations=numEvalFound), bestIndex
+    return EAResult(fitness=population_fitness[bestIndex], solution=population[bestIndex], evaluations=numEvalFound), bestIndex
 
 def limit_memory(memory, memorySize):
     """

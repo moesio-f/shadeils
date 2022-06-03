@@ -1,8 +1,12 @@
+import typing
 import numpy as np
 from collections import namedtuple
 import os
 
-EAresult = namedtuple("EAresult", "fitness solution evaluations")
+class EAResult(typing.NamedTuple):
+    fitness: typing.Any
+    solution: typing.Any
+    evaluations: typing.Any
 
 
 def random_population(domain, dimension, size):
