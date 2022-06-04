@@ -468,11 +468,17 @@ def start(fitness: fns.FitnessFunction,
     # Set seed
     np.random.seed(seed)
 
-    print("Function: {0}".format(fitness.name))
-    print("Seed: {0}".format(seed))
-    print("Threshold: {0}".format(threshold))
-    print("Population_size: {0}".format(population))
-    print("SHADE_H: {0}".format(shade_h))
+    configs_str = str(f"Function: {fitness.name}\n"
+                      f"Seed: {seed}\n"
+                      f"Threshold: {threshold}\n"
+                      f"Population: {population}\n"
+                      f"SHADE_H: {shade_h}\n"
+                      f"MaxEvals: {max_evals}\n"
+                      f"EvalsDE: {evals_de}\n"
+                      f"EvalsGS: {evals_gs}\n"
+                      f"EvalsLS: {evals_ls}\n"
+                      f"Runs: {runs}\n"
+                      f"Milestones: {milestones}\n")
 
     fname = fname_prefix + \
         f"_pop{population}_H{shade_h}_t{threshold:.2f}_{fitness.name}_{seed}r{runs}.txt"
@@ -480,8 +486,11 @@ def start(fitness: fns.FitnessFunction,
 
     if not verbose:
         fid = open(output, 'w+')
+        print(configs_str)
     else:
         fid = sys.stdout
+
+    fid.write(configs_str)
 
     for _ in range(runs):
         SR_MTS = []
