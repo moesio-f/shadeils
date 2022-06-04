@@ -123,7 +123,7 @@ def get_improvement(alg_name, before, after):
     else:
         ratio = (before-after)/before
 
-    return "{0}: {1:.3e} -> {2:.3e} [{3:.2e}, {4:.2f}]\n".format(alg_name, before, after, before-after, ratio)
+    return f"[IMPROVEMENT][{alg_name}] {before:.3f} -> {after:.3f} [delta={before-after:.3f}, ratio={ratio:.2f}]\n"
 
 
 SR_global_MTS = []
