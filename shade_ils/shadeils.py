@@ -396,14 +396,14 @@ def ihshadels(fitness: fns.FitnessFunction,
                 num_worse += 1
                 imp_str = ",".join(["{}:{}".format(m, val)
                                    for m, val in pool.improvements.items()])
-                fid.write("Pools Improvements: {}".format(imp_str))
+                fid.write(f"[IMPROVEMENT][POOLS] {imp_str}\n")
 
                 # Random the LS
                 reset_ls(dims, lower, upper, method)
 
             if num_worse >= 3:
                 num_worse = 0
-                fid.write("Restart:{0:.2e} for {1:.2f}: with {2:d} evaluations\n".format(
+                fid.write("[RESTART] fitness={0:.2e} for ration={1:.2f}: with {2:d} evaluations\n".format(
                     current_best.fitness, ratio_improvement, totalevals))
                 # Increase a 1% of values
                 posi = np.random.choice(population_size)
@@ -435,8 +435,9 @@ def ihshadels(fitness: fns.FitnessFunction,
             if totalevals >= max_evals:
                 break
 
-    fid.write("Best global fitness: %e, Best global solution: %s, Evaluations: %d\n" % (abs(best_global_fitness), ' '.join(
-        map(str, best_global_solution)), totalevals))
+    fid.write(f"[FINAL] Fitness: {best_global_fitness}\n"
+              f"[FINAL] Solution: {best_global_solution}\n"
+              f"[FINAL] FEs: {totalevals}\n")
     fid.flush()
     return result
 
