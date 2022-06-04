@@ -194,9 +194,9 @@ def check_evals(totalevals: int,
         return evals
     elif totalevals >= evals[0]:
         best = bestFitness if bestFitness.fitness < globalBestFitness.fitness else globalBestFitness
-        fid.write(f"[{evals[0]}][MILESTONE] - Fitness: {best.fitness}\n")
-        fid.write(f"[{evals[0]}][MILESTONE] - Solution: {best.solution}\n")
-        fid.write(f"[{evals[0]}][MILESTONE] - FEs: {totalevals}\n")
+        fid.write(f"[MILESTONE][{evals[0]}] Fitness: {best.fitness}\n"
+                  f"[MILESTONE][{evals[0]}] Solution: {best.solution}\n"
+                  f"[MILESTONE][{evals[0]}] FEs: {totalevals}\n")
         fid.flush()
         evals.pop(0)
 
@@ -277,7 +277,8 @@ def ihshadels(fitness: fns.FitnessFunction,
     initial_fitness = fitness_fun(initial_sol)
 
     if initial_fitness < populationFitness[bestId]:
-        fid.write(f"[INITIAL][Best initial_sol] fitness={initial_fitness} solution={initial_sol}\n")
+        fid.write(
+            f"[INITIAL][Best initial_sol] fitness={initial_fitness} solution={initial_sol}\n")
         population[bestId] = initial_sol
         populationFitness[bestId] = initial_fitness
 
