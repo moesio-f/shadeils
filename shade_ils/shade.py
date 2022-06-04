@@ -177,7 +177,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
         fid.close()
 
     bestIndex = np.argmin(population_fitness)
-    print("SHADE Mean[F,CR]: ({0:.2f}, {1:.2f})".format(MemF.mean(), MemCR.mean()))
+    print("[SHADE] Mean[F,CR]: ({0:.2f}, {1:.2f})".format(MemF.mean(), MemCR.mean()))
           
     return EAResult(fitness=population_fitness[bestIndex], solution=population[bestIndex], evaluations=numEvalFound), bestIndex
 

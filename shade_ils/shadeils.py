@@ -277,8 +277,8 @@ def ihshadels(fitness: fns.FitnessFunction,
     initial_fitness = fitness_fun(initial_sol)
 
     if initial_fitness < populationFitness[bestId]:
-        fid.write(
-            f"[INITIAL][Best initial_sol] fitness={initial_fitness} solution={initial_sol}\n")
+        fid.write(f"[INITIAL] Fitness: {initial_fitness}\n"
+                  f"[INITIAL] Solution: {initial_sol}\n")
         population[bestId] = initial_sol
         populationFitness[bestId] = initial_fitness
 
@@ -387,7 +387,7 @@ def ihshadels(fitness: fns.FitnessFunction,
                     previous_fitness-result.fitness)/previous_fitness
 
             fid.write(f"[IMPROVEMENT][TotalImprovement] ratio={int(100*ratio_improvement):d}%\n"
-                      f"[IMPROVEMENT][TotalImprovement] fitness: {previous_fitness:.3e} => {result.fitness:.3e}\n"
+                      f"[IMPROVEMENT][TotalImprovement] fitness: {previous_fitness:.3f} => {result.fitness:.3f}\n"
                       f"[IMPROVEMENT][TotalImprovement] num_worse={num_worse}, restart={num_restarts}\n")
 
             if ratio_improvement >= threshold:
@@ -428,8 +428,9 @@ def ihshadels(fitness: fns.FitnessFunction,
                 reset_ls(dims, lower, upper)
                 num_restarts += 1
 
-            fid.write("Current best fitness: {0:.2e} (Best global fitness: {1:.2e}): with {2:d} evaluations\n".format(
-                current_best_fitness, best_global_fitness, totalevals))
+            fid.write(f"[ITERATION] Best Fitness: {current_best_fitness:.2f}\n" 
+            f"[ITERATION] Global Best Fitness: {best_global_fitness:.2f}\n" 
+            f"[ITERATION] FEs: {totalevals}\n")
             fid.flush()
 
             if totalevals >= max_evals:
