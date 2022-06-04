@@ -385,9 +385,9 @@ def ihshadels(fitness: fns.FitnessFunction,
                 ratio_improvement = (
                     previous_fitness-result.fitness)/previous_fitness
 
-            fid.write(f"TotalImprovement[{int(100*ratio_improvement):d}%]"
-                      f"{previous_fitness:.3e} => {result.fitness:.3e} ({num_worse})"
-                      f"\tRestart: {num_restarts}\n")
+            fid.write(f"[IMPROVEMENT][TotalImprovement] ratio={int(100*ratio_improvement):d}%\n"
+                      f"[IMPROVEMENT][TotalImprovement] fitness: {previous_fitness:.3e} => {result.fitness:.3e}\n"
+                      f"[IMPROVEMENT][TotalImprovement] num_worse={num_worse}, restart={num_restarts}\n")
 
             if ratio_improvement >= threshold:
                 num_worse = 0
