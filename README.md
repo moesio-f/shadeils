@@ -21,3 +21,4 @@ This fork fixes a few upstream bugs and update dependencies to newer versions. A
 - (03/06/2022) Remove direct CLI support from `shadeils.py`;
 - (03/06/2022) Add new parameters (`evals_gs`, `evals_de`, `evals_ls`) to `ihshadels(...)`;
 - (04/06/2022) Improve logging (add keys, standardize, formatting, etc);
+- (04/06/2022) Refactor structure to create package;
