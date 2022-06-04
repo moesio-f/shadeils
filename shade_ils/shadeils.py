@@ -123,7 +123,7 @@ def get_improvement(alg_name, before, after):
     else:
         ratio = (before-after)/before
 
-    return "{0}: {1:.3e} -> {2:.3e} [{3:.2e}, {4:.2f}]\n".format(alg_name, before, after, before-after, ratio)
+    return f"[IMPROVEMENT][{alg_name}] {before:.3f} -> {after:.3f} [delta={before-after:.3f}, ratio={ratio:.2f}]\n"
 
 
 SR_global_MTS = []
@@ -185,12 +185,18 @@ def applySHADE(crossover, fitness, funinfo, dimension, evals, population, popula
 optimo = True
 
 
-def check_evals(totalevals, evals, bestFitness, globalBestFitness, fid):
+def check_evals(totalevals: int,
+                evals: typing.List[int],
+                bestFitness: de.EAResult,
+                globalBestFitness: de.EAResult,
+                fid):
     if not evals:
         return evals
     elif totalevals >= evals[0]:
-        best = min(bestFitness, globalBestFitness)
-        fid.write("[%.1e]: %e,%d\n" % (evals[0], best, totalevals))
+        best = bestFitness if bestFitness.fitness < globalBestFitness.fitness else globalBestFitness
+        fid.write(f"[MILESTONE][{evals[0]}] Fitness: {best.fitness}\n"
+                  f"[MILESTONE][{evals[0]}] Solution: {best.solution}\n"
+                  f"[MILESTONE][{evals[0]}] FEs: {totalevals}\n")
         fid.flush()
         evals.pop(0)
 
@@ -271,7 +277,8 @@ def ihshadels(fitness: fns.FitnessFunction,
     initial_fitness = fitness_fun(initial_sol)
 
     if initial_fitness < populationFitness[bestId]:
-        fid.write(f"Best initial_sol: {initial_sol}: {initial_fitness}\n")
+        fid.write(f"[INITIAL] Fitness: {initial_fitness}\n"
+                  f"[INITIAL] Solution: {initial_sol}\n")
         population[bestId] = initial_sol
         populationFitness[bestId] = initial_fitness
 
@@ -313,8 +320,13 @@ def ihshadels(fitness: fns.FitnessFunction,
                 previous_fitness, current_best.fitness)
 
             pool_global.improvement(method_global, improvement, 2)
-            evals = check_evals(totalevals, evals,
-                                current_best.fitness, best_global_fitness, fid)
+            evals = check_evals(totalevals,
+                                evals,
+                                current_best,
+                                de.EAResult(fitness=best_global_fitness,
+                                            solution=best_global_solution,
+                                            evaluations=totalevals),
+                                fid)
             current_best_solution = current_best.solution
             current_best_fitness = current_best.fitness
 
@@ -334,8 +346,13 @@ def ihshadels(fitness: fns.FitnessFunction,
                                           population, populationFitness, bestId, current_best, fid, info_de)
                 improvement = current_best.fitness - result.fitness
                 totalevals += result.evaluations
-                evals = check_evals(totalevals, evals,
-                                    result.fitness, best_global_fitness, fid)
+                evals = check_evals(totalevals,
+                                    evals,
+                                    result,
+                                    de.EAResult(fitness=best_global_fitness,
+                                                solution=best_global_solution,
+                                                evaluations=totalevals),
+                                    fid)
                 current_best = result
 
             if apply_ls:
@@ -344,8 +361,13 @@ def ihshadels(fitness: fns.FitnessFunction,
                 improvement = get_ratio_improvement(
                     current_best.fitness, result.fitness)
                 totalevals += result.evaluations
-                evals = check_evals(totalevals, evals,
-                                    result.fitness, best_global_fitness, fid)
+                evals = check_evals(totalevals,
+                                    evals,
+                                    result,
+                                    de.EAResult(fitness=best_global_fitness,
+                                                solution=best_global_solution,
+                                                evaluations=totalevals),
+                                    fid)
                 current_best = result
 
                 pool.improvement(method, improvement, 10, .25)
@@ -364,9 +386,9 @@ def ihshadels(fitness: fns.FitnessFunction,
                 ratio_improvement = (
                     previous_fitness-result.fitness)/previous_fitness
 
-            fid.write(f"TotalImprovement[{int(100*ratio_improvement):d}%]"
-                      f"{previous_fitness:.3e} => {result.fitness:.3e} ({num_worse})"
-                      f"\tRestart: {num_restarts}\n")
+            fid.write(f"[IMPROVEMENT][TotalImprovement] ratio={int(100*ratio_improvement):d}%\n"
+                      f"[IMPROVEMENT][TotalImprovement] fitness: {previous_fitness:.3f} => {result.fitness:.3f}\n"
+                      f"[IMPROVEMENT][TotalImprovement] num_worse={num_worse}, restart={num_restarts}\n")
 
             if ratio_improvement >= threshold:
                 num_worse = 0
@@ -374,14 +396,14 @@ def ihshadels(fitness: fns.FitnessFunction,
                 num_worse += 1
                 imp_str = ",".join(["{}:{}".format(m, val)
                                    for m, val in pool.improvements.items()])
-                fid.write("Pools Improvements: {}".format(imp_str))
+                fid.write(f"[IMPROVEMENT][POOLS] {imp_str}\n")
 
                 # Random the LS
                 reset_ls(dims, lower, upper, method)
 
             if num_worse >= 3:
                 num_worse = 0
-                fid.write("Restart:{0:.2e} for {1:.2f}: with {2:d} evaluations\n".format(
+                fid.write("[RESTART] fitness={0:.2e} for ration={1:.2f}: with {2:d} evaluations\n".format(
                     current_best.fitness, ratio_improvement, totalevals))
                 # Increase a 1% of values
                 posi = np.random.choice(population_size)
@@ -406,15 +428,17 @@ def ihshadels(fitness: fns.FitnessFunction,
                 reset_ls(dims, lower, upper)
                 num_restarts += 1
 
-            fid.write("Current best fitness: {0:.2e} (Best global fitness: {1:.2e}): with {2:d} evaluations\n".format(
-                current_best_fitness, best_global_fitness, totalevals))
+            fid.write(f"[ITERATION] Best Fitness: {current_best_fitness:.2f}\n" 
+            f"[ITERATION] Global Best Fitness: {best_global_fitness:.2f}\n" 
+            f"[ITERATION] FEs: {totalevals}\n")
             fid.flush()
 
             if totalevals >= max_evals:
                 break
 
-    fid.write("Best global fitness: %e, Best global solution: %s, Evaluations: %d\n" % (abs(best_global_fitness), ' '.join(
-        map(str, best_global_solution)), totalevals))
+    fid.write(f"[FINAL] Fitness: {best_global_fitness}\n"
+              f"[FINAL] Solution: {best_global_solution}\n"
+              f"[FINAL] FEs: {totalevals}\n")
     fid.flush()
     return result
 
@@ -445,11 +469,17 @@ def start(fitness: fns.FitnessFunction,
     # Set seed
     np.random.seed(seed)
 
-    print("Function: {0}".format(fitness.name))
-    print("Seed: {0}".format(seed))
-    print("Threshold: {0}".format(threshold))
-    print("Population_size: {0}".format(population))
-    print("SHADE_H: {0}".format(shade_h))
+    configs_str = str(f"Function: {fitness.name}\n"
+                      f"Seed: {seed}\n"
+                      f"Threshold: {threshold}\n"
+                      f"Population: {population}\n"
+                      f"SHADE_H: {shade_h}\n"
+                      f"MaxEvals: {max_evals}\n"
+                      f"EvalsDE: {evals_de}\n"
+                      f"EvalsGS: {evals_gs}\n"
+                      f"EvalsLS: {evals_ls}\n"
+                      f"Runs: {runs}\n"
+                      f"Milestones: {milestones}\n")
 
     fname = fname_prefix + \
         f"_pop{population}_H{shade_h}_t{threshold:.2f}_{fitness.name}_{seed}r{runs}.txt"
@@ -457,8 +487,11 @@ def start(fitness: fns.FitnessFunction,
 
     if not verbose:
         fid = open(output, 'w+')
+        print(configs_str)
     else:
         fid = sys.stdout
+
+    fid.write(configs_str)
 
     for _ in range(runs):
         SR_MTS = []
