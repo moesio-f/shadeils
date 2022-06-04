@@ -185,12 +185,18 @@ def applySHADE(crossover, fitness, funinfo, dimension, evals, population, popula
 optimo = True
 
 
-def check_evals(totalevals, evals, bestFitness, globalBestFitness, fid):
+def check_evals(totalevals: int,
+                evals: typing.List[int],
+                bestFitness: de.EAResult,
+                globalBestFitness: de.EAResult,
+                fid):
     if not evals:
         return evals
     elif totalevals >= evals[0]:
-        best = min(bestFitness, globalBestFitness)
-        fid.write("[%.1e]: %e,%d\n" % (evals[0], best, totalevals))
+        best = bestFitness if bestFitness.fitness < globalBestFitness.fitness else globalBestFitness
+        fid.write(f"[{evals[0]}][MILESTONE] - Fitness: {best.fitness}\n")
+        fid.write(f"[{evals[0]}][MILESTONE] - Solution: {best.solution}\n")
+        fid.write(f"[{evals[0]}][MILESTONE] - FEs: {totalevals}\n")
         fid.flush()
         evals.pop(0)
 
@@ -313,8 +319,13 @@ def ihshadels(fitness: fns.FitnessFunction,
                 previous_fitness, current_best.fitness)
 
             pool_global.improvement(method_global, improvement, 2)
-            evals = check_evals(totalevals, evals,
-                                current_best.fitness, best_global_fitness, fid)
+            evals = check_evals(totalevals,
+                                evals,
+                                current_best,
+                                de.EAResult(fitness=best_global_fitness,
+                                            solution=best_global_solution,
+                                            evaluations=totalevals),
+                                fid)
             current_best_solution = current_best.solution
             current_best_fitness = current_best.fitness
 
@@ -334,8 +345,13 @@ def ihshadels(fitness: fns.FitnessFunction,
                                           population, populationFitness, bestId, current_best, fid, info_de)
                 improvement = current_best.fitness - result.fitness
                 totalevals += result.evaluations
-                evals = check_evals(totalevals, evals,
-                                    result.fitness, best_global_fitness, fid)
+                evals = check_evals(totalevals,
+                                    evals,
+                                    result,
+                                    de.EAResult(fitness=best_global_fitness,
+                                                solution=best_global_solution,
+                                                evaluations=totalevals),
+                                    fid)
                 current_best = result
 
             if apply_ls:
@@ -344,8 +360,13 @@ def ihshadels(fitness: fns.FitnessFunction,
                 improvement = get_ratio_improvement(
                     current_best.fitness, result.fitness)
                 totalevals += result.evaluations
-                evals = check_evals(totalevals, evals,
-                                    result.fitness, best_global_fitness, fid)
+                evals = check_evals(totalevals,
+                                    evals,
+                                    result,
+                                    de.EAResult(fitness=best_global_fitness,
+                                                solution=best_global_solution,
+                                                evaluations=totalevals),
+                                    fid)
                 current_best = result
 
                 pool.improvement(method, improvement, 10, .25)

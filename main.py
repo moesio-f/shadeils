@@ -5,5 +5,5 @@ if __name__ == '__main__':
     fn = fns.Ackley(100)
     shadeils.start(fn.as_fitness_function(),
                    population=100,
-                   milestones=list(range(10000)),
+                   milestones=list(range(20)),
                    verbose=True)
