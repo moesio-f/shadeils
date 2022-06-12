@@ -260,10 +260,7 @@ def ihshadels(fitness: fns.FitnessFunction,
     fitness_fun = fitness.fn
     funinfo = fitness.info
     evals = milestones
-    totalevals = 1
-
-    initial_sol = np.ones(dims)*((lower+upper)/2.0)
-    current_best_fitness = fitness_fun(initial_sol)
+    totalevals = 0  # No FE so far
 
     bounds = list(zip(np.ones(dims)*lower, np.ones(dims)*upper))
     bounds_partial = list(zip(np.ones(dims)*lower, np.ones(dims)*upper))
@@ -272,9 +269,12 @@ def ihshadels(fitness: fns.FitnessFunction,
     population = reset_de(population_size, dims, lower, upper, info_de)
     populationFitness = [fitness_fun(ind) for ind in population]
     bestId = np.argmin(populationFitness)
+    totalevals += population_size  # 1 FE for every individual in population
 
     initial_sol = np.ones(dims)*(lower+upper)/2.0
     initial_fitness = fitness_fun(initial_sol)
+    current_best_fitness = initial_fitness
+    totalevals += 1  # 1 FE
 
     if initial_fitness < populationFitness[bestId]:
         population[bestId] = initial_sol
@@ -430,8 +430,8 @@ def ihshadels(fitness: fns.FitnessFunction,
                 num_restarts += 1
 
             fid.write(f"[ITERATION] Best Fitness: {current_best_fitness:.2f}\n" 
-            f"[ITERATION] Global Best Fitness: {best_global_fitness:.2f}\n" 
-            f"[ITERATION] FEs: {totalevals}\n")
+                      f"[ITERATION] Global Best Fitness: {best_global_fitness:.2f}\n" 
+                      f"[ITERATION] FEs: {totalevals}\n")
             fid.flush()
 
             if totalevals >= max_evals:
