@@ -179,7 +179,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
 
     bestIndex = np.argmin(population_fitness)
           
-    return EAResult(fitness=population_fitness[bestIndex], solution=population[bestIndex], evaluations=numEvalFound), bestIndex
+    return EAResult(fitness=population_fitness[bestIndex], solution=population[bestIndex], evaluations=currentEval), bestIndex
 
 def limit_memory(memory, memorySize):
     """
