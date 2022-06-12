@@ -277,10 +277,11 @@ def ihshadels(fitness: fns.FitnessFunction,
     initial_fitness = fitness_fun(initial_sol)
 
     if initial_fitness < populationFitness[bestId]:
-        fid.write(f"[INITIAL] Fitness: {initial_fitness}\n"
-                  f"[INITIAL] Solution: {initial_sol}\n")
         population[bestId] = initial_sol
         populationFitness[bestId] = initial_fitness
+    
+    fid.write(f"[INITIAL] Fitness: {populationFitness[bestId]}\n"
+              f"[INITIAL] Solution: {population[bestId]}\n")
 
     current_best = de.EAResult(solution=population[bestId, :],
                                fitness=populationFitness[bestId],
