@@ -333,6 +333,7 @@ def ihshadels(fitness: fns.FitnessFunction,
             if current_best_fitness < best_global_fitness:
                 best_global_solution = np.copy(current_best_solution)
                 best_global_fitness = fitness_fun(best_global_solution)
+                totalevals += 1  # 1 FE
 
         for i in range(1):
             current_best = de.EAResult(
