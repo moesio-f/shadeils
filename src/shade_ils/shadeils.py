@@ -114,6 +114,12 @@ class PoolLast:
         return best
 
 
+def _maybe_convert_to_list(value: typing.Any):
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    return list(value)
+
+
 def get_improvement(alg_name, before, after):
     """
     Print the improvement with an algorithm
@@ -194,7 +200,7 @@ def check_evals(totalevals: int,
     elif totalevals >= evals[0]:
         best = bestFitness if bestFitness.fitness < globalBestFitness.fitness else globalBestFitness
         fid.write(f"[MILESTONE][{evals[0]}] Fitness: {best.fitness}\n"
-                  f"[MILESTONE][{evals[0]}] Solution: {best.solution}\n"
+                  f"[MILESTONE][{evals[0]}] Solution: {_maybe_convert_to_list(best.solution)}\n"
                   f"[MILESTONE][{evals[0]}] FEs: {totalevals}\n")
         fid.flush()
         evals.pop(0)
@@ -278,9 +284,9 @@ def ihshadels(fitness: fns.FitnessFunction,
     if initial_fitness < populationFitness[bestId]:
         population[bestId] = initial_sol
         populationFitness[bestId] = initial_fitness
-    
+
     fid.write(f"[INITIAL] Fitness: {populationFitness[bestId]}\n"
-              f"[INITIAL] Solution: {population[bestId]}\n"
+              f"[INITIAL] Solution: {_maybe_convert_to_list(population[bestId])}\n"
               f"[INITIAL] FEs: {totalevals}\n")
     fid.flush()
 
@@ -318,7 +324,8 @@ def ihshadels(fitness: fns.FitnessFunction,
             current_best = apply_localsearch(
                 "Global", method_global, fitness_fun, bounds, current_best_solution, current_best.fitness, evals_gs, fid)
             totalevals += current_best.evaluations
-            improvement = get_ratio_improvement(previous_fitness, current_best.fitness)
+            improvement = get_ratio_improvement(
+                previous_fitness, current_best.fitness)
 
             pool_global.improvement(method_global, improvement, 2)
             evals = check_evals(totalevals,
@@ -412,7 +419,7 @@ def ihshadels(fitness: fns.FitnessFunction,
                 new_solution = np.random.uniform(-0.01,
                                                  0.01, dims)*(upper-lower)+population[posi]
                 new_solution = np.clip(new_solution, lower, upper)
-                current_best = de.EAResult(solution=new_solution, fitness=fitness_fun(new_solution), 
+                current_best = de.EAResult(solution=new_solution, fitness=fitness_fun(new_solution),
                                            evaluations=0)
                 current_best_solution = current_best.solution
                 current_best_fitness = current_best.fitness
@@ -430,8 +437,8 @@ def ihshadels(fitness: fns.FitnessFunction,
                 reset_ls(dims, lower, upper)
                 num_restarts += 1
 
-            fid.write(f"[ITERATION] Best Fitness: {current_best_fitness:.2f}\n" 
-                      f"[ITERATION] Global Best Fitness: {best_global_fitness:.2f}\n" 
+            fid.write(f"[ITERATION] Best Fitness: {current_best_fitness:.2f}\n"
+                      f"[ITERATION] Global Best Fitness: {best_global_fitness:.2f}\n"
                       f"[ITERATION] FEs: {totalevals}\n")
             fid.flush()
 
@@ -439,7 +446,7 @@ def ihshadels(fitness: fns.FitnessFunction,
                 break
 
     fid.write(f"[FINAL] Fitness: {best_global_fitness}\n"
-              f"[FINAL] Solution: {best_global_solution}\n"
+              f"[FINAL] Solution: {_maybe_convert_to_list(best_global_solution)}\n"
               f"[FINAL] FEs: {totalevals}\n")
     fid.flush()
     return result
