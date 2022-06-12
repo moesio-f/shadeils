@@ -282,6 +282,7 @@ def ihshadels(fitness: fns.FitnessFunction,
     fid.write(f"[INITIAL] Fitness: {populationFitness[bestId]}\n"
               f"[INITIAL] Solution: {population[bestId]}\n"
               f"[INITIAL] FEs: {totalevals}\n")
+    fid.flush()
 
     current_best = de.EAResult(solution=population[bestId, :],
                                fitness=populationFitness[bestId],
