@@ -316,8 +316,7 @@ def ihshadels(fitness: fns.FitnessFunction,
             current_best = apply_localsearch(
                 "Global", method_global, fitness_fun, bounds, current_best_solution, current_best.fitness, evals_gs, fid)
             totalevals += current_best.evaluations
-            improvement = get_ratio_improvement(
-                previous_fitness, current_best.fitness)
+            improvement = get_ratio_improvement(previous_fitness, current_best.fitness)
 
             pool_global.improvement(method_global, improvement, 2)
             evals = check_evals(totalevals,
@@ -411,10 +410,11 @@ def ihshadels(fitness: fns.FitnessFunction,
                 new_solution = np.random.uniform(-0.01,
                                                  0.01, dims)*(upper-lower)+population[posi]
                 new_solution = np.clip(new_solution, lower, upper)
-                current_best = de.EAResult(
-                    solution=new_solution, fitness=fitness_fun(new_solution), evaluations=0)
+                current_best = de.EAResult(solution=new_solution, fitness=fitness_fun(new_solution), 
+                                           evaluations=0)
                 current_best_solution = current_best.solution
                 current_best_fitness = current_best.fitness
+                totalevals += 1  # 1 FE new solution
 
                 # Init DE
                 population = reset_de(
