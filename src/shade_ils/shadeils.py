@@ -147,11 +147,10 @@ def apply_localsearch(name, method, fitness_fun, bounds, current_best, current_b
         else:
             SR = SR_MTS
 
-        res, SR_MTS = mts.mtsls(fitness_fun, current_best,
-                                current_best_fitness, lower, upper, maxevals, SR)
+        res, SR_MTS, funcalls = mts.mtsls(fitness_fun, current_best,
+                                          current_best_fitness, lower, upper, maxevals, SR)
         sol = res.solution
         fit = res.fitness
-        funcalls = maxevals
     else:
         raise NotImplementedError(method)
 
