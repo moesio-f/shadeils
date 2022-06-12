@@ -403,7 +403,7 @@ def ihshadels(fitness: fns.FitnessFunction,
 
             if num_worse >= 3:
                 num_worse = 0
-                fid.write("[RESTART] fitness={0:.2e} for ration={1:.2f}: with {2:d} evaluations\n".format(
+                fid.write("[RESTART] fitness={0:.2e} for ratio={1:.2f}: with {2:d} evaluations\n".format(
                     current_best.fitness, ratio_improvement, totalevals))
                 # Increase a 1% of values
                 posi = np.random.choice(population_size)
@@ -419,9 +419,8 @@ def ihshadels(fitness: fns.FitnessFunction,
                 population = reset_de(
                     population_size, dims, lower, upper, info_de)
                 populationFitness = [fitness_fun(ind) for ind in population]
-                totalevals += population_size
+                totalevals += population_size  # 1 FE for every individual in population
 
-                totalevals += population_size
                 # Random the LS
                 pool_global.reset()
                 pool.reset()
