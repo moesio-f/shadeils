@@ -100,4 +100,4 @@ def mtsls(function, sol, fitness, lower, upper, maxevals, SR):
     initial_SR = 0.2*(upper-lower)
     SR[SR < 1e-15] = initial_SR
 
-    return current_best, SR
+    return current_best, SR, totalevals
