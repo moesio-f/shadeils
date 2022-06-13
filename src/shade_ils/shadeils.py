@@ -321,6 +321,10 @@ def ihshadels(fitness: fns.FitnessFunction,
         if not pool_global.is_empty():
             previous_fitness = current_best.fitness
             method_global = pool_global.get_new()
+            
+            fid.write(f"[INFO] Applying LS (Global: {method_global})")
+            fid.flush()
+            
             current_best = apply_localsearch(
                 "Global", method_global, fitness_fun, bounds, current_best_solution, current_best.fitness, evals_gs, fid)
             totalevals += current_best.evaluations
@@ -351,6 +355,9 @@ def ihshadels(fitness: fns.FitnessFunction,
             method = pool.get_new()
 
             if apply_de:
+                fid.write(f"[INFO] Applying DE")
+                fid.flush()
+                
                 result, bestInd = applyDE(crossover, fitness_fun, funinfo, dims, evals_de,
                                           population, populationFitness, bestId, current_best, fid, info_de)
                 improvement = current_best.fitness - result.fitness
@@ -365,6 +372,9 @@ def ihshadels(fitness: fns.FitnessFunction,
                 current_best = result
 
             if apply_ls:
+                fid.write(f"[INFO] Applying LS (Local: {method})")
+                fid.flush()
+                
                 result = apply_localsearch("Local", method, fitness_fun, bounds_partial,
                                            current_best.solution, current_best.fitness, evals_ls, fid)
                 improvement = get_ratio_improvement(
