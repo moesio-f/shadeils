@@ -9,10 +9,15 @@ for Differential Evolution," Evolutionary Computation (CEC), 2013 IEEE
 Congress on , vol., no., pp.71,78, 20-23 June 2013
 doi:10.1109/CEC.2013.6557555
 """
+import math
+import typing
+import os
 import numpy as np
 
+import shade_ils.fitness_function as fns
+from shade_ils import shadeils
 from shade_ils.de import EAResult, random_population, get_experiments_file, random_indexes
-import math
+
 
 def improve(fun, run_info, dimension, check_evals, name_output=None, replace=True, popsize=100, H=100, population=None, population_fitness=None, initial_solution=None, MemF=None, MemCR=None):
     """
@@ -26,7 +31,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
          lower: double lower bounds
          upper: double upper bounds
          threshold: minimum optim value (ignored)
-    
+
     dimension of the problem.
     max_evals maximum_evaluations_numbers.
     name_output name of the output file
@@ -42,18 +47,16 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
 
     if final is not None:
         return final
-    
+
     for attr in ['lower', 'upper']:
-         assert attr in run_info.keys(), "'{}' info not provided for benchmark".format(attr)
+        assert attr in run_info.keys(), "'{}' info not provided for benchmark".format(attr)
 
     # Added in a array the max evaluations
     if not isinstance(check_evals, list):
         check_evals = [check_evals]
 
     domain = (run_info['lower'], run_info['upper'])
-    # fun_best = run_info['best'], for generic function it's usually unknown.
-    maxEval = check_evals[-1]
-    check_eval = check_evals.pop()
+    maxEval = check_evals.pop()
 
     if population is None:
         population = random_population(domain, dimension, popsize)
@@ -69,6 +72,19 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
     else:
         currentEval = 0
 
+    if fid is not None:
+        # Find best fitness index
+        bIndex = np.argmin(population_fitness)
+        # Find best fitness
+        bFit = population_fitness[bIndex]
+        # Find best solution
+        bSol = population[bIndex]
+
+        fid.write(f"[INITIAL] Fitness: {bFit}\n"
+                  f"[INITIAL] Solution: {shadeils._maybe_convert_to_list(bSol)}\n"
+                  f"[INITIAL] FEs: {currentEval}\n")
+        fid.flush()
+
     # Init memory with population
     memory = population.tolist()
 
@@ -80,7 +96,7 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
 
     if MemCR is None:
         MemCR = np.ones(H)*0.5
-        
+
     k = 0
     pmin = 2.0/popsize
 
@@ -91,7 +107,6 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
         CR = np.zeros(popsize)
         u = np.zeros((popsize, dimension))
         best_fitness = np.min(population_fitness)
-        numEvalFound = currentEval
 
         for (i, xi) in enumerate(population):
             # Getting F and CR for that solution
@@ -126,16 +141,10 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
 
         # Update population and SF, SCR
         weights = []
-        
+
         for i, fitness in enumerate(population_fitness):
             fitness_u = fun(u[i])
 
-            if math.isnan(fitness_u):
-                print(i)
-                print(domain)
-                print(u[i])
-                print(fitness_u)
-                
             assert not math.isnan(fitness_u)
 
             if fitness_u <= fitness:
@@ -148,15 +157,29 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
 
                 if (fitness_u < best_fitness):
                     best_fitness = fitness_u
-                    numEvalFound = currentEval
-                    
+
                 population[i] = u[i]
                 population_fitness[i] = fitness_u
 
         currentEval += popsize
+
         # Check the memory
         memory = limit_memory(memory, memorySize)
-                
+
+        # Check evals
+        if fid is not None:
+            # Find best fitness index
+            bIndex = np.argmin(population_fitness)
+            # Find best fitness
+            bFit = population_fitness[bIndex]
+            # Find best solution
+            bSol = population[bIndex]
+
+            bEAResult = EAResult(
+                fitness=bFit, solution=bSol, evaluations=currentEval)
+            shadeils.check_evals(currentEval, check_evals,
+                                 bEAResult, bEAResult, fid)
+
         # Update MemCR and MemF
         if len(SCR) > 0 and len(SF) > 0:
             Fnew, CRnew = update_FCR(SF, SCR, weights)
@@ -164,34 +187,33 @@ def improve(fun, run_info, dimension, check_evals, name_output=None, replace=Tru
             MemCR[k] = CRnew
             k = (k + 1) % H
 
-    if fid is not None and currentEval >= check_eval:
-        bestFitness = np.min(population_fitness)
-        print("bestFitness: {}".format(bestFitness))
-        fid.write("[%.0e]: %e,%d\n" %(check_eval, abs(bestFitness), numEvalFound))
-        fid.flush()
-
-        if check_evals:
-            check_eval = check_evals.pop(0)
+    bestIndex = np.argmin(population_fitness)
+    bestFitness = population_fitness[bestIndex]
+    bestSolution = population[bestIndex]
 
     if fid is not None:
-        fid.write("[SHADE] Mean[F,CR]: ({0:.2f}, {1:.2f})".format(MemF.mean(), MemCR.mean()))
+        fid.write("[SHADE] Mean[F,CR]: ({0:.2f}, {1:.2f})\n".format(
+            MemF.mean(), MemCR.mean()))
+        fid.write(f"[FINAL] Fitness: {bestFitness}\n"
+                  f"[FINAL] Solution: {shadeils._maybe_convert_to_list(bestSolution)}\n"
+                  f"[FINAL] FEs: {currentEval}\n")
         fid.close()
 
-    bestIndex = np.argmin(population_fitness)
-          
-    return EAResult(fitness=population_fitness[bestIndex], solution=population[bestIndex], evaluations=currentEval), bestIndex
+    return EAResult(fitness=bestFitness, solution=bestSolution, evaluations=currentEval), bestIndex
+
 
 def limit_memory(memory, memorySize):
     """
     Limit the memory to  the memorySize
     """
     memory = np.array(memory)
-    
+
     if len(memory) > memorySize:
         indexes = np.random.permutation(len(memory))[:memorySize]
         memory = memory[indexes]
 
     return memory.tolist()
+
 
 def update_FCR(SF, SCR, improvements):
     """
@@ -208,6 +230,7 @@ def update_FCR(SF, SCR, improvements):
 
     return Fnew, CRnew
 
+
 def shade_clip(domain, solution, original):
     lower = domain[0]
     upper = domain[1]
@@ -215,9 +238,48 @@ def shade_clip(domain, solution, original):
 
     if np.all(solution == clip_sol):
         return solution
-    
+
     idx_lowest = (solution < lower)
     solution[idx_lowest] = (original[idx_lowest]+lower)/2.0
     idx_upper = (solution > upper)
     solution[idx_upper] = (original[idx_upper]+upper)/2.0
     return solution
+
+
+def start(fitness: fns.FitnessFunction,
+          shade_h: int = 100,
+          population: int = 100,
+          max_evals: int = int(3e6),
+          milestones: typing.List[int] = list(map(int, [1.2e5, 6e5, 3e6])),
+          runs: int = 1,
+          seed=None,
+          output_dir='results',
+          fname_prefix='SHADE'):
+
+    if seed is None:
+        np.random.seed(None)
+        seed = np.random.randint(0, 999999999)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Set seed
+    np.random.seed(seed)
+
+    fname = fname_prefix + \
+        f"_pop{population}_H{shade_h}_{fitness.name}_{seed}r{runs}.txt"
+    output = os.path.join(output_dir, fname)
+
+    fn = fitness.fn
+    info = fitness.info
+    dims = info['dimension']
+
+    for _ in range(runs):
+        improve(fun=fn,
+                run_info=info,
+                dimension=dims,
+                check_evals=milestones + [max_evals],
+                name_output=output,
+                replace=True,
+                popsize=population,
+                H=shade_h)
