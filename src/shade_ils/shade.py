@@ -7,7 +7,7 @@ and a new crossover operator.
 Tanabe, R.; Fukunaga, A., "Success-history based parameter adaptation
 for Differential Evolution," Evolutionary Computation (CEC), 2013 IEEE
 Congress on , vol., no., pp.71,78, 20-23 June 2013
-doi:10.1109/CEC.2013.655755510.1109/CEC.2013.6557555
+doi:10.1109/CEC.2013.6557555
 """
 import numpy as np
 
