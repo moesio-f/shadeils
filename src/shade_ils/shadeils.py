@@ -145,7 +145,7 @@ def apply_localsearch(name, method, fitness_fun, bounds, current_best, current_b
 
     if method == 'grad':
         sol, fit, info = scipy_optimize.fmin_l_bfgs_b(
-            fitness_fun, x0=current_best, approx_grad=1, bounds=bounds, maxfun=maxevals, disp=False)
+            fitness_fun, x0=current_best, approx_grad=True, bounds=bounds, maxfun=maxevals, disp=0)
         funcalls = info['funcalls']
     elif method == 'mts':
         if name.lower() == "global":
