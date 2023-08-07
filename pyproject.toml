@@ -1,3 +1,30 @@
 [build-system]
-requires = ["setuptools>=42"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "shadeils"
+version = "1.0.0"
+readme = "README.md"
+description = "SHADE-ILS package."
+keywords = ["shadeils"]
+requires-python = ">=3.8"
+
+classifiers = [
+    "Development Status :: Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: Portuguese",
+    "Programming Language :: Python :: 3.8",
+]
+
+dependencies = [
+    "numpy>=1.22.4",
+    "six>=1.16.0",
+    "scipy>=1.8.1"
+]
+
+[project.urls]
+repository = "https://github.com/moesio-f/shadeils/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
