@@ -19,7 +19,7 @@ from . import utils
 from .entities import EAResult, FitnessFunction
 
 
-class ShadeOptimizer:
+class SHADEOptimizer:
     MAX_SEED: int = 90000
 
     def __init__(self,

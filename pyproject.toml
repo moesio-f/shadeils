@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shade_ils"
-version = "2.0.1"
+version = "2.0.2"
 readme = "README.md"
 description = "SHADE-ILS package."
 

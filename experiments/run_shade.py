@@ -1,10 +1,10 @@
 import time
 
 from shade_ils.benchmark import Ackley
-from shade_ils.shade import ShadeOptimizer
+from shade_ils.shade import SHADEOptimizer
 
 fn = Ackley(50000)
-optimizer = ShadeOptimizer(fn=fn, 
+optimizer = SHADEOptimizer(fn=fn, 
                            population_size=500, 
                            max_evaluations=int(1e4), 
                            seed=42)
