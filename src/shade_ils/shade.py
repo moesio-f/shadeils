@@ -52,13 +52,16 @@ class ShadeOptimizer:
         self.initial_solution = initial_solution
         self.n_evaluations = 0
 
+        assert self.pop_size > 4, "Minimum population"
+
     def optimize(self) -> EAResult:
         domain = (self.fn.info()['lower'], self.fn.info()['upper'])
 
         if self.population is None:
             pop_seed = self.rng.integers(0, self.MAX_SEED)
             self.population = utils.random_population(domain,
-                                                      self.fn.info()['dimension'],
+                                                      self.fn.info()[
+                                                          'dimension'],
                                                       self.pop_size,
                                                       seed=pop_seed)
 
@@ -85,12 +88,12 @@ class ShadeOptimizer:
 
             for (i, xi) in enumerate(self.population):
                 # Getting F and CR for that solution
-                index_H = np.random.randint(0, self.history_size)
+                index_H = self.rng.integers(0, self.history_size)
                 meanF = self.memF[index_H]
                 meanCR = self.memCR[index_H]
-                Fi = np.random.normal(meanF, 0.1)
-                CRi = np.random.normal(meanCR, 0.1)
-                p = np.random.rand() * (0.2-p_min) + p_min
+                Fi = self.rng.normal(meanF, 0.1)
+                CRi = self.rng.normal(meanCR, 0.1)
+                p = self.rng.random() * (0.2 - p_min) + p_min
 
                 # Get two random values
                 seed = self.rng.integers(0, self.MAX_SEED)
@@ -98,19 +101,21 @@ class ShadeOptimizer:
                                           self.pop_size,
                                           seed=seed,
                                           ignore=[i])
+
                 # Get the second from the memory
                 seed = self.rng.integers(0, self.MAX_SEED)
                 r2 = utils.random_indexes(1,
                                           len(memory),
                                           seed=seed,
                                           ignore=[i, r1])
+
                 xr1 = self.population[r1]
                 xr2 = memory[r2]
 
                 # Get one of the p best values
                 maxbest = int(p * self.pop_size)
                 bests = np.argsort(self.population_fitness)[:maxbest]
-                pbest = np.random.choice(bests)
+                pbest = self.rng.choice(bests)
                 xbest = self.population[pbest]
 
                 # Mutation
