@@ -24,3 +24,4 @@ This fork fixes a few upstream bugs and update dependencies to newer versions. A
 - (04/06/2022) Refactor structure to create package;
 - (12/06/2022) Fixed fitness evaluation count;
 - (12/06/2022) Fixed logging (typos, etc);
+- (20/08/2023) Refactor: change functions to classes, update requirements, remove unneeded packages and modules;
