@@ -6,7 +6,7 @@ from . import utils
 from .entities import EAResult, FitnessFunction
 from .lbfgs_b import LBFGSBOptimizer
 from .mts_ls1 import MTSLS1
-from .shade import ShadeOptimizer
+from .shade import SHADEOptimizer
 
 
 class PoolLast:
@@ -406,7 +406,7 @@ class SHADEILSOptimizer:
         if H is None:
             H = population.shape[0]
 
-        optimizer = ShadeOptimizer(
+        optimizer = SHADEOptimizer(
             fn=self.fn,
             population_size=population.shape[0],
             max_evaluations=self.evaluations_de,
