@@ -40,7 +40,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.extract-tag.outputs.tag }}
-          target_commitish: main
+          target_commitish:  master
           name: Versão ${{ steps.extract-tag.outputs.tag }}
           prerelease: false
           draft: false
