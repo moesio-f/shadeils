@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import typing
-
 import numpy as np
-import scipy.optimize as scipy_optimize
 
-from .entities import FitnessFunction, EAResult
+from . import utils
+from .entities import EAResult, FitnessFunction
+from .lbfgs_b import LBFGSBOptimizer
 from .mts_ls1 import MTSLS1
-from . import shade, utils
+from .shade import ShadeOptimizer
 
 
 class PoolLast:
@@ -101,7 +100,6 @@ class PoolLast:
 
         if np.all([value == 0 for value in self.improvements.values()]):
             new_method = np.random.choice(list(self.improvements.keys()))
-            print("new_method: {}".format(new_method))
             return new_method
 
         # Complete the ranking
@@ -335,20 +333,21 @@ class SHADEILSOptimizer:
     def _local_search(self,
                       name: str,
                       method: str,
-                      bounds: str,
+                      bounds: list[tuple[float, float]],
                       current_best: EAResult,
                       max_evaluations: int,
                       seed: int) -> EAResult:
         rng = np.random.default_rng(seed)
 
         if method == 'grad':
-            sol, fit, info = scipy_optimize.fmin_l_bfgs_b(self.fn,
-                                                          x0=current_best.solution,
-                                                          approx_grad=True,
-                                                          bounds=bounds,
-                                                          maxfun=max_evaluations,
-                                                          disp=0)
-            n_evaluations = info['funcalls']
+            result = LBFGSBOptimizer(fn=self.fn,
+                                     initial_solution=current_best,
+                                     max_evaluations=max_evaluations,
+                                     bounds=bounds,
+                                     ensure_evaluations=True).optimize()
+            sol = result.solution
+            fit = result.fitness
+            n_evaluations = result.evaluations
         elif method == 'mts':
             if name.lower() == "global":
                 SR = self.SR_global_MTS
@@ -407,7 +406,7 @@ class SHADEILSOptimizer:
         if H is None:
             H = population.shape[0]
 
-        optimizer = shade.ShadeOptimizer(
+        optimizer = ShadeOptimizer(
             fn=self.fn,
             population_size=population.shape[0],
             max_evaluations=self.evaluations_de,

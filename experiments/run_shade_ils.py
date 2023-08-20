@@ -6,7 +6,7 @@ from shade_ils.shade_ils import SHADEILSOptimizer
 fn = Ackley(50000)
 optimizer = SHADEILSOptimizer(fn=fn,
                               population_size=500,
-                              max_evaluations=int(1e4),
+                              max_evaluations=int(3e4),
                               history_size=100,
                               evaluations_gs=int(1e3),
                               evaluations_de=int(1e3),

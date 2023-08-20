@@ -21,12 +21,14 @@ class MTSLS1:
                  solution: EAResult,
                  max_evaluations: int,
                  seed: int,
-                 SR) -> None:
+                 SR,
+                 ensure_evaluations: bool = True) -> None:
         self.fn = fn
         self.solution = solution
         self.max_evaluations = max_evaluations
         self.seed = seed
         self.SR = SR
+        self.ensure_evaluations = ensure_evaluations
 
     def search(self) -> EAResult:
         """
@@ -50,6 +52,17 @@ class MTSLS1:
 
         if total_evaluations < self.max_evaluations:
             dim_sorted = rng.permutation(dim)
+
+            # OBS:. essa é uma mudança que não existia
+            #   no código original.
+            # Podemos configurar uma garantia para que
+            #   as avaliações de fitness não passem
+            #   do limite desejado selecionando apenas
+            #   algumas das dimensões para melhorar.
+            if self.ensure_evaluations:
+                if 2 * len(dim_sorted) > self.max_evaluations:
+                    max_size = self.max_evaluations // 2
+                    dim_sorted = dim_sorted[:max_size]
 
             for i in dim_sorted:
                 result = self._mtsls_improve_dim(current_best, i, clip)
